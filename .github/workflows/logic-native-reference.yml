@@ -1,0 +1,29 @@
+name: StarMade-Logic native source reference
+on:
+  push:
+    branches: [logic/integration-package-20260923]
+    paths: [.github/workflows/logic-native-reference.yml]
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: blackcancer/StarMade-Open
+          ref: e5a3b49d86943c4d618cea6512e28fa0b95901df
+          persist-credentials: false
+      - name: Collect Java references, not game assets
+        run: |
+          mkdir -p reference
+          cp -R src/main/java reference/java
+          git rev-parse HEAD > reference/COMMIT.txt
+          printf '%s\n' 'Read-only native source reference for StarMade-Logic qualification. No game resources or font assets. Not part of the application distribution.' > reference/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starmade-logic-native-source-reference
+          path: reference/
+          retention-days: 3
+          if-no-files-found: error
