@@ -604,7 +604,7 @@ function frame(): void {
 
   // All passes must observe the same animation frame.
   shadowPipeline.render(renderer);
-  displayPanels.forEach(panel => panel.updateVisibility(camera));
+  displayPanels.forEach(panel => {panel.updateTime(deltaS);panel.updateVisibility(camera);});
   renderer.render(scene, camera);
 
   if (!didPublishReadyState) {

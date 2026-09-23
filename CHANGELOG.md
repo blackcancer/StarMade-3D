@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 — 2026-09-23
+
+- Update the pinned development/integration reference and CI checkout to StarMade-Decoder 2.0.1 (`ed9d3bec`).
+- Align Display with StarMade-Open e5a3b49d: cascading segments, nine explicit font sizes, bounded offsets, text rotation, 500-unit default text distance, five backgrounds and external native scanline animation.
+- Update the complete variable catalog to 56 entries, including corrected reactorMaxHp and new reactor/shield/navigation variables.
+- Add entity-scoped custom variable snapshots; consume client-side set/unset tags without mutating gameplay state.
+- Pin and check the updated native rendering sources; support their dynamic cube-texture directives and retain documented material sheet-slot limits.
+- Extend unit, source-contract and GPU regression coverage for the updated Display pipeline.
+
 ## 1.0.1 — 2026-09-23
 
 - Add entity-scoped calculated display values (`StarMadeDisplayValues`) and the complete 46-entry StarMade-Open variable catalog, including indexed reactor/shield families and documented native token collision.

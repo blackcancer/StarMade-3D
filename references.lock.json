@@ -1,20 +1,28 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-20",
+  "verifiedAt": "2026-09-23",
   "decoder": {
     "repository": "blackcancer/StarMade-Decoder",
-    "commit": "4cb21bd72258c87eb8115f90449a8334c34658a6",
-    "version": "2.0.0",
+    "commit": "ed9d3becdb139eaf665c27a23c6ef3ef60d687d9",
+    "version": "2.0.1",
     "directory": "../StarMade-Decoder",
-    "packageBlob": "709febf57e870a5c4a94db4ce9d3f8963c48aec4"
+    "packageBlob": "9092b7b7bc94de9fcba3364cec1c1c4414945b2f"
   },
   "gameSource": {
     "repository": "blackcancer/StarMade-Open",
-    "commit": "decf3a1990f29b9505041f122188bf19489bcf7e",
+    "commit": "e5a3b49d86943c4d618cea6512e28fa0b95901df",
     "directory": "../StarMade-Open",
     "verifiedFiles": {
-      "src/main/java/org/schema/game/common/data/world/SegmentData4Byte.java": "14b4663fe9d738cc6ba8e69362c0ae27ad879bd6",
-      "src/main/resources/data/shader/cube/quads13/cubeEncoding.glsl": "6500fbdc4c2daf608f6181ba1bfcbff3e067afb3"
+      "src/main/java/org/schema/game/common/data/world/SegmentData.java": "733d2b8af2c8ac1fe3e264a723a85d6f5b0bdd2d",
+      "src/main/resources/data/shader/cube/quads13/cubeEncoding.glsl": "ba4f581caa384b84f140013fe8194eca414f8b7d",
+      "src/main/java/org/schema/game/client/view/textbox/AbstractTextBox.java": "77470a1049bbf24896aa8293924f2140db399ff2",
+      "src/main/java/org/schema/game/client/view/textbox/Replacements.java": "c0974911aea0603424b6a418b751f724d1b6446a",
+      "src/main/java/org/schema/game/client/view/textbox/StyledSegment.java": "2306615bfdfe8edade6bcce515031717d45b6c3b",
+      "src/main/java/org/schema/game/client/view/TextBoxSeg.java": "dc372c8fabc3dd3bd225b580cb2a9316a262ecaf",
+      "src/main/java/org/schema/schine/graphicsengine/forms/font/FontLibrary.java": "5ab1ad67cd97ab4024610c53437a6922370e211f",
+      "src/main/java/org/schema/game/common/controller/SegmentController.java": "a0f598843123e46549c6cba75faa465a64709881",
+      "src/main/resources/data/shader/scanline/scanline.frag.glsl": "f69eea677669c4576df1442368531849cc086c1f",
+      "src/main/java/org/schema/schine/graphicsengine/core/settings/EngineSettings.java": "fd48e80d1d7e83f96dcb14e05651492098e74d08"
     }
   },
   "upstreamEvidence": {

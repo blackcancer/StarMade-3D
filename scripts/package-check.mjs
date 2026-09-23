@@ -19,7 +19,7 @@ import { Matrix4, Group } from 'three';
 import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose, StarMadeDisplayValues, STARMADE_DISPLAY_VARIABLES, parseStarMadeDisplayText, createStarMadeDisplayPanel } from 'starmade-3d';
 const values = new StarMadeDisplayValues(); values.set('ship', {power:12, shieldHp0:900});
 assert.equal(parseStarMadeDisplayText('[power] / [shieldHp0]', values.forEntity('ship').resolve).text,'12 / 900');
-assert.equal(STARMADE_DISPLAY_VARIABLES.length,46); assert.equal(typeof createStarMadeDisplayPanel,'function');
+assert.equal(STARMADE_DISPLAY_VARIABLES.length,56); assert.equal(typeof createStarMadeDisplayPanel,'function');
 assert.equal(Object.keys(STARMADE_SHADER_SOURCES).length,0);
 assert.throws(()=>createStarMadeCubeShaderMaterial(), /shader source/);
 setStarMadeShaderSources({'data/shader/consumer.vert':'void main() {}'});

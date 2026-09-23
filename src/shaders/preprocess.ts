@@ -126,7 +126,16 @@ function preprocessSource(
     }
 
     if (currentActive(stack)) {
-      output.push(line);
+      // Current native ShaderLibrary expands these against its renderable sheets.
+      // These are the five 2D sheet slots exposed by our existing material API.
+      const dynamic = trimmed.match(/^#DYNAMIC_CUBE_(MAIN|NORMAL)_(UNIFORMS|SAMPLE)$/);
+      if (dynamic) {
+        const prefix = dynamic[1] === 'MAIN' ? 'mainTex' : 'normalTex';
+        const slots = [0,1,2,3,7];
+        output.push(dynamic[2] === 'UNIFORMS'
+          ? slots.map(slot=>`uniform sampler2D ${prefix}${slot};`).join('\n')
+          : slots.slice(0,-1).map(slot=>`if (layer <= ${slot}.5) return texture2D(${prefix}${slot}, uv);`).join('\n')+`\nreturn texture2D(${prefix}7, uv);`);
+      } else output.push(line);
     }
   }
 

@@ -296,7 +296,7 @@ renderer.setAnimationLoop(time => {
     updateStarMadeCubeShaderTime(material, delta); updateStarMadeCubeShaderClipPlanes(material, camera.near, camera.far); updateStarMadeCubeShaderMVP(material, camera.matrixWorldInverse, camera.projectionMatrix); material.uniforms.viewPos.value.copy(camera.position);
   }
   for (const material of lodMaterials) material.uniforms.viewPos.value.copy(camera.position);
-  displayPanels.forEach(panel => panel.updateVisibility(camera));
+  displayPanels.forEach(panel => {panel.updateTime(delta);panel.updateVisibility(camera);});
   renderer.render(scene, camera);
 });
 window.addEventListener('pagehide', () => { displayPanels.forEach(panel=>panel.dispose()); displayAssets.dispose(); loadController?.abort(); pool.dispose(); overlay.dispose(); relationOverlay?.dispose(); diffOverlays.forEach(o => o.dispose()); disposers.forEach(d => d()); lodHandle?.release(); lodPool.dispose(); surfaceHandle?.release(); surfaces.dispose(); controls.dispose(); renderer.setAnimationLoop(null); renderer.dispose(); });

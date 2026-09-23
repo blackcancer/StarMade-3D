@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: blackcancer/StarMade-Decoder
-          ref: 4cb21bd72258c87eb8115f90449a8334c34658a6
+          ref: ed9d3becdb139eaf665c27a23c6ef3ef60d687d9
           path: StarMade-Decoder
           persist-credentials: false
       # This reference repository is private. No native corpus is committed here
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: blackcancer/StarMade-Open
-          ref: decf3a1990f29b9505041f122188bf19489bcf7e
+          ref: e5a3b49d86943c4d618cea6512e28fa0b95901df
           token: ${{ secrets.STARMADE_REFERENCE_TOKEN }}
           path: StarMade-Open
           persist-credentials: false

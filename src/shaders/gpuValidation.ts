@@ -106,6 +106,7 @@ function applyStarMadeThreeShaderProgramPatches(id: StarMadeShaderProgramId, sou
     .replace(/float\s+xIndex\s*=\s*typeI\s*&\s*15\s*;/g, "float xIndex = float(typeI & 15);")
     .replace(/float\s+yIndex\s*=\s*typeI\s*>>\s*4\s*;/g, "float yIndex = float(typeI >> 4);")
     .replace(/\blayer\s*\*\s*0\.25\b/g, "float(layer) * 0.25")
+    .replace(/\b(getBlockTexture|sampleMainTextureSheet|sampleNormalTextureSheet)\(layer\b/g, "$1(float(layer)")
     .replace(/pow\(\((64\.0|100\.0)-dist\)\*0\.03125, (3\.2|4\.2)\)/g,
       "pow(max(0.0, ($1-dist)*0.03125), $2)");
 

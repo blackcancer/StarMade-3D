@@ -419,7 +419,7 @@ describe("createStarMadeThreeShaderProgramSources", () => {
     expect(sources.vertexSource).toContain("float yIndex = float(typeI >> 4);");
     expect(sources.fragmentSource).toContain("float(layer) * 0.25");
     expect(sources.fragmentSource).not.toContain("layer * 0.25");
-    expect(sources.fragmentSource).toContain("switch(layer)");
+    expect(sources.fragmentSource).toContain("if (layer <= 0.5) return texture(mainTex0, uv);");
   });
 
   it("builds the StarMade LOD shadow source pair for depth casters", () => {
@@ -720,7 +720,7 @@ describe("createStarMadeCubeShaderMaterial", () => {
     expect(material.transparent).toBe(true);
     expect(material.depthWrite).toBe(false);
     expect(material.side).not.toBe(DoubleSide);
-    expect(material.fragmentShader).toContain("if(alphMod < 0.01)");
+    expect(material.fragmentShader).toContain("if(alphMod < 0.2)");
     expect(material.fragmentShader).toContain("lightedColor.a = alphMod;");
     expect(material.uniforms.extraAlpha.value).toBe(1);
   });
@@ -731,7 +731,7 @@ describe("createStarMadeCubeShaderMaterial", () => {
     expect(material.transparent).toBe(true);
     expect(material.depthWrite).toBe(false);
     expect(material.side).toBe(DoubleSide);
-    expect(material.fragmentShader).toContain("if(alphMod < 0.01)");
+    expect(material.fragmentShader).toContain("if(alphMod < 0.2)");
     expect(material.fragmentShader).toContain("lightedColor.a = alphMod;");
     expect(material.uniforms.extraAlpha.value).toBe(1);
   });
@@ -742,7 +742,7 @@ describe("createStarMadeCubeShaderMaterial", () => {
     expect(material.transparent).toBe(false);
     expect(material.depthWrite).toBe(true);
     expect(material.side).toBe(DoubleSide);
-    expect(material.fragmentShader).toContain("if(alphMod < 0.01)");
+    expect(material.fragmentShader).toContain("if(alphMod < 0.2)");
     expect(material.fragmentShader).toContain("lightedColor.a = alphMod;");
     expect(material.uniforms.extraAlpha.value).toBe(1);
   });
@@ -803,8 +803,8 @@ describe("createStarMadeCubeShaderMaterial", () => {
     expect(material.fragmentShader).toContain("uniform sampler2D mainTex0;");
     expect(material.fragmentShader).not.toContain("uniform sampler2DArray cTexNormal;");
     expect(material.fragmentShader).not.toContain("uniform sampler2DArray cTex;");
-    expect(material.fragmentShader).toContain("bTex = texture(normalTex0, vTexCoord0.st);");
-    expect(material.fragmentShader).toContain("tex = getBlockTexture(mainTex0);");
+    expect(material.fragmentShader).toContain("bTex = sampleNormalTextureSheet(float(layer), vTexCoord0.st);");
+    expect(material.fragmentShader).toContain("tex = getBlockTexture(float(layer));");
     expect(material.fragmentShader).toContain("emissionAndShine = bTex.a;");
     expect(material.fragmentShader).toContain(
       "starMadeFragColor.rgb = max(emission*lightedColor.rgb, starMadeFragColor.rgb + spot);"

@@ -4,7 +4,7 @@ import { releaseInputs } from './release-inputs.mjs';
 import assert from 'node:assert/strict';
 if(!process.env.STARMADE_DIR)throw Error('STARMADE_DIR required for full release qualification');
 const version=JSON.parse(readFileSync('package.json','utf8')).version;
-const output=`validation/v${version}`;
+const output=process.env.STARMADE_QUALIFICATION_OUTPUT ?? `validation/v${version}`;
 const inputs=releaseInputs();const startedAt=new Date().toISOString();
 mkdirSync(`${output}/logs`,{recursive:true});
 const recipes=[

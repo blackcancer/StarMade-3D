@@ -36,7 +36,7 @@ export default defineConfig({
         server.middlewares.use('/starmade-assets/display', (req, res, next) => {
           const assets: Record<string, [string, string]> = {
             '/Monda-Regular.ttf': ['data/font/Monda-Regular.ttf', 'font/ttf'],
-            '/screen-gui-blue.png': ['data/image-resource/screen-gui-blue.png', 'image/png']
+            ...Object.fromEntries(['blue','red','green','yellow','purple'].map(color=>['/screen-gui-'+color+'.png',['data/image-resource/screen-gui-'+color+'.png','image/png'] as [string,string]]))
           };
           const asset = assets[req.url ?? ''];
           if (!asset) { next(); return; }

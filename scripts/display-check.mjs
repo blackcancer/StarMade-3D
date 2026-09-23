@@ -27,6 +27,7 @@ try {
   let serial = 0; const pending = new Map();
   socket.onmessage = event => {
     const m = JSON.parse(event.data);
+    if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') report.errors.push(m.params.args.map(arg=>arg.value ?? arg.description).join(' '));
     if (m.method === 'Runtime.exceptionThrown') report.errors.push(m.params.exceptionDetails);
     const p = pending.get(m.id); if (p) { clearTimeout(p.timer); pending.delete(m.id); m.error ? p.fail(Error(JSON.stringify(m.error))) : p.done(m.result); }
   };
@@ -52,7 +53,11 @@ try {
   check('text changes refresh GPU texture and password content stays hidden',mutation.hidden===0&&mutation.visible>40,mutation);
   const supplied=await evaluate(`(()=>{const d=__DISPLAY__,p=d.panels[0];p.update('<style>c=#ff0000,f=4</style>[power]');d.values.set('demo',{power:'WWWW'});p.update();d.renderer.render(d.scene,d.camera);const first=pixelCount(),version=p.texture.version;d.values.set('demo',{power:'WWWW'});const unchanged=!p.update()&&version===p.texture.version;d.values.set('demo',{power:''});p.update();d.renderer.render(d.scene,d.camera);return {first,empty:pixelCount(),unchanged,error:d.renderer.getContext().getError()};})()`);
   check('calculated values API updates GPU text without changing stored template',supplied.first>40&&supplied.empty===0&&supplied.unchanged&&supplied.error===0,supplied);
-  const distance=await evaluate(`(()=>{const d=__DISPLAY__,p=d.panels[0];d.camera.position.set(0,0,100);d.draw();return {text:p.text.visible,background:p.background.visible};})()`);
+  const styles=await evaluate(`(()=>{const d=__DISPLAY__,p=d.panels[0];p.update('<style>h=false,bg=red,f=4,c=#ff0000</style>RED<style>c=#00ff00</style>GREEN');d.focus(0);const gl=d.renderer.getContext(),a=new Uint8Array(400*400*4);gl.readPixels(500,275,400,400,gl.RGBA,gl.UNSIGNED_BYTE,a);let green=0;for(let i=0;i<a.length;i+=4)if(a[i+1]>150&&a[i+1]>a[i]*2&&a[i+1]>a[i+2]*2)green++;const red=pixelCount(),screen=p.background.material.map.image.src;p.update('<style>bg=false,r=10:20:30,f=5</style>ROTATED');d.renderer.render(d.scene,d.camera);return {red,green,screen,hidden:!p.background.visible,rotation:p.text.parent.rotation.toArray().slice(0,3),error:gl.getError()};})()`);
+  check('cascading colors, themed background and text-only rotation reach GPU',styles.red>40&&styles.green>40&&styles.screen.includes('screen-gui-red')&&styles.hidden&&Math.abs(styles.rotation[2]-Math.PI/6)<1e-6&&styles.error===0,styles);
+  const animation=await evaluate(`(()=>{const d=__DISPLAY__,p=d.panels[0],gl=d.renderer.getContext();const sample=()=>{d.renderer.render(d.scene,d.camera);const a=new Uint8Array(400*400*4);gl.readPixels(500,275,400,400,gl.RGBA,gl.UNSIGNED_BYTE,a);return Array.from(a).reduce((sum,v)=>sum+v,0)};p.update('<style>h=true,f=4</style>ANIMATED');const first=sample();p.updateTime(.13);const second=sample();p.update('<style>h=false,f=4</style>PAINTED');const painted=sample();p.updateTime(.19);return {animated:first!==second,stable:painted===sample(),error:gl.getError()};})()`);
+  check('native scanlines animate and painted mode remains stable',animation.animated&&animation.stable&&animation.error===0,animation);
+  const distance=await evaluate(`(()=>{const d=__DISPLAY__,p=d.panels[0];d.camera.position.set(0,0,600);d.draw();return {text:p.text.visible,background:p.background.visible};})()`);
   check('native text distance culls text independently from screen',!distance.text&&distance.background,distance);
   check('no browser runtime exceptions',report.errors.length===0,report.errors);
   report.ok=true;

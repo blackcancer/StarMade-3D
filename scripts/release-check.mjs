@@ -9,8 +9,8 @@ assert.deepEqual(proof.inputs,releaseInputs(),'Release inputs changed since qual
 assert.equal(proof.commands.length,10);assert(proof.commands.every(c=>c.exitCode===0));
 const coverage=JSON.parse(readFileSync('coverage/verdict.json','utf8'));
 assert.equal(coverage.qualified,true);assert.equal(coverage.required.lines,100);assert.equal(coverage.required.branches,100);assert.equal(coverage.required.functions,100);
-assert.equal(pkg.version,'1.0.1');assert.equal(pkg.name,'starmade-3d');
+assert.equal(pkg.version,'1.0.2');assert.equal(pkg.name,'starmade-3d');
 for(const path of ['gpu/result.json','index/result.json','inspection/result.json','isanth/result.json','display/result.json','package.json','performance.json'].map(path=>output+'/'+path))assert.equal(JSON.parse(readFileSync(path,'utf8')).ok,true,path);
 assert(!readFileSync('dist/shaders/sources.js','utf8').includes('gl_FragColor'),'Unexpected bundled native shader corpus');
-assert(!readFileSync('docs/v1.0.1-validation.md','utf8').includes('checks are in progress'),'Finish the release report before publishing');
+assert(!readFileSync('docs/v1.0.2-validation.md','utf8').includes('checks are in progress'),'Finish the release report before publishing');
 console.log('Release qualification matches current sources: PASS');

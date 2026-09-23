@@ -34,7 +34,7 @@ it('rejects invalid snapshots atomically and ambiguous case aliases', () => {
 
 it('accepts every native variable, indexed family and case variant from the public catalog', () => {
   const values = new StarMadeDisplayValues();
-  expect(STARMADE_DISPLAY_VARIABLES).toHaveLength(46);
+  expect(STARMADE_DISPLAY_VARIABLES).toHaveLength(56);
   for (const variable of STARMADE_DISPLAY_VARIABLES) {
     for (const suffix of variable.indexed ? ['0', '1', '999', '1000'] : ['']) {
       const token = variable.token + suffix;
@@ -42,4 +42,19 @@ it('accepts every native variable, indexed family and case variant from the publ
       expect(parseStarMadeDisplayText(`[${token.toUpperCase()}]`, values.forEntity('ship').resolve).text).toBe(variable.id);
     }
   }
+});
+
+it('publishes isolated native custom variable snapshots without executing client write tags',()=>{
+ const values=new StarMadeDisplayValues(), source=values.forEntity('ship');
+ expect(source.resolveVariable?.('foo')).toBeUndefined();
+ values.setVariables('ship',{Foo:'one',_bar:'two'});values.setVariables('dock',{foo:'other'});
+ expect(source.resolveVariable?.('FOO')).toBe('one');
+ expect(parseStarMadeDisplayText('[set:foo=bad][var:foo][unset:foo]',source.resolve,source.resolveVariable).text).toBe('one');
+ expect(source.resolveVariable?.('foo')).toBe('one');
+ for(const snapshot of [{'': 'x'},{'3bad':'x'},{['x'.repeat(33)]:'x'},{a:'x'.repeat(257)},{a:1},{Foo:'one',foo:'two'},Object.fromEntries(Array.from({length:129},(_,i)=>['v'+i,'x']))])expect(()=>values.setVariables('ship',snapshot as never)).toThrow();
+ expect(()=>values.setVariables('',{})).toThrow();expect(source.resolveVariable?.('foo')).toBe('one');
+ values.setVariables('ship',Object.fromEntries(Array.from({length:128},(_,i)=>['v'+i,'x'.repeat(256)])));
+ expect(source.resolveVariable?.('v127')).toHaveLength(256);expect(source.resolveVariable?.('foo')).toBeUndefined();
+ expect(values.clearVariables('ship')).toBe(true);expect(values.clearVariables('ship')).toBe(false);
+ expect(values.forEntity('dock').resolveVariable?.('foo')).toBe('other');
 });

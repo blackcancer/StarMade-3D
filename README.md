@@ -1,6 +1,6 @@
 # StarMade-3D
 
-**1.0.1** — TypeScript/ESM library for rendering and inspecting decoded StarMade
+**1.0.2** — TypeScript/ESM library for rendering and inspecting decoded StarMade
 creations with Three.js. Independent project by InitSysRev.
 
 It provides native block/LOD rendering adapters, immutable inspection snapshots,
@@ -13,7 +13,7 @@ The consuming program owns its UI, colors, renderer, persistence and history.
 Like StarMade-Decoder, the npm-compatible package is attached to the GitHub release:
 
 ```sh
-npm install https://github.com/blackcancer/StarMade-3D/releases/download/v1.0.1/starmade-3d-1.0.1.tgz three@0.164.1
+npm install https://github.com/blackcancer/StarMade-3D/releases/download/v1.0.2/starmade-3d-1.0.2.tgz three@0.164.1
 # TypeScript consumers also need the Three.js declarations:
 npm install --save-dev @types/three@0.164.1
 ```
@@ -58,9 +58,9 @@ corpora identified in the validation report; arbitrary future corpora are not gu
 
 ## Documentation
 
-Version 1.0.1 includes the [Display Module text pipeline](docs/display-module.md)
+Version 1.0.2 includes the [Display Module text pipeline](docs/display-module.md)
 and `/display.html`, with entity-scoped calculated values and the complete native variable catalog.
-See the [1.0.1 validation report](docs/v1.0.1-validation.md).
+See the [1.0.2 validation report](docs/v1.0.2-validation.md).
 
 - [API contracts and examples](docs/inspection-api.md)
 - [Functional maps and dockings](docs/functional-map.md)

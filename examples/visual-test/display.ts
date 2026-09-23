@@ -15,7 +15,8 @@ const panels=Array.from({length:6},(_,orientation)=>{
  const panel=createStarMadeDisplayPanel({...assets,position,orientation,text:input.value,values:values.forEntity('demo')});scene.add(panel.root);return panel;
 });
 input.oninput=()=>panels.forEach(panel=>panel.update(input.value));
-function draw(){controls.update();values.set('demo',{name:'ISS Example',elapsed:Math.floor(performance.now()/1000)});panels.forEach(panel=>{panel.update();panel.updateVisibility(camera);});renderer.render(scene,camera);}
+let previousTime=performance.now();
+function draw(){const now=performance.now(),delta=(now-previousTime)/1000;previousTime=now;controls.update();values.set('demo',{name:'ISS Example',elapsed:Math.floor(performance.now()/1000)});panels.forEach(panel=>{panel.update();panel.updateTime(delta);panel.updateVisibility(camera);});renderer.render(scene,camera);}
 renderer.setAnimationLoop(draw);
 addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
 document.querySelector('#status')!.textContent='Texte, police et fond chargés depuis l’installation StarMade.';
