@@ -1,0 +1,38 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, join } from 'node:path';
+import assert from 'node:assert/strict';
+const root = process.cwd();
+const work = mkdtempSync(join(tmpdir(), 'starmade-package-consumer-'));
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const run = (command, args, cwd = work) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 180000 });
+try {
+  const packed = JSON.parse(run(npm, ['pack', '--ignore-scripts', '--json', '--pack-destination', work], root))[0];
+  assert.equal(packed.name, 'starmade-3d'); assert.equal(packed.version, '1.0.0');
+  for (const f of packed.files) assert(!/(^|\/)(node_modules|tests|samples|artifacts|\.git|audit-|validation)/.test(f.path), f.path);
+  for (const name of ['docs/assets.md', 'docs/api-stability.md', 'docs/inspection-api.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md']) assert(packed.files.some(f => f.path === name), `Missing ${name}`);
+  writeFileSync(join(work, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+  run(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(work, packed.filename), 'three@0.164.1', '@types/three@0.164.1']);
+  const consumer = `import assert from 'node:assert/strict';
+import { Matrix4, Group } from 'three';
+import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose } from 'starmade-3d';
+assert.equal(Object.keys(STARMADE_SHADER_SOURCES).length,0);
+assert.throws(()=>createStarMadeCubeShaderMaterial(), /shader source/);
+setStarMadeShaderSources({'data/shader/consumer.vert':'void main() {}'});
+const doc = new InspectionDocument('consumer',0,[{id:'root',blocks:[{position:[0,0,0],state:{type:1,hp:100,orientation:0,active:false}}]}, {id:'dock',parentId:'root',transform:new Matrix4().makeRotationY(.5).toArray(),blocks:[]}]);
+let released=0; const view = new InspectionScene(()=>({object:new Group(),dispose(){released++}}));
+view.sync(doc); assert.equal(view.root.isGroup,true); assert.equal(inspectEntityHierarchy(doc)[1].depth,1);
+const next=doc.apply(0,[{kind:'block',ref:{entityId:'root',position:[0,0,0]},state:null}]);
+assert.equal(view.sync(next).lighting,true);assert.equal(released,1);view.dispose();assert.equal(typeof resolveStarMadeRailPose,'function');
+console.log('consumer imports, shared Three.js, external shaders, sync and disposal PASS');`;
+  writeFileSync(join(work, 'consumer.mjs'), consumer); const output = run(process.execPath, ['consumer.mjs']);
+  writeFileSync(join(work, 'consumer.ts'), `import { InspectionDocument, InspectionScene, type BlockReference, loadStarMadeShaderSources } from 'starmade-3d';\nimport { Group } from 'three';\nconst ref: BlockReference={entityId:'root',position:[0,0,0]};\nconst view=new InspectionScene(()=>({object:new Group(),dispose(){}}));\nview.sync(new InspectionDocument('typed',0,[]));\nvoid ref;void loadStarMadeShaderSources;\n`);
+  run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
+  const tree = JSON.parse(run(npm, ['ls', 'three', '--json']));
+  assert.equal(tree.dependencies.three.version,'0.164.1');
+  const installed = readFileSync(join(work,'node_modules/starmade-3d/dist/shaders/sources.js'),'utf8');
+  assert(!installed.includes('gl_FragColor')); assert(installed.length<6000);
+  const report = { ok:true, package:packed.filename, size:packed.size, unpackedSize:packed.unpackedSize, files:packed.files.length, integrity:packed.integrity, output, types:true, noBundledShaderCorpus:true };
+  mkdirSync('validation/v1', { recursive:true }); writeFileSync('validation/v1/package.json',JSON.stringify(report,null,2)+'\n'); console.log(JSON.stringify(report,null,2));
+} finally { rmSync(work,{recursive:true,force:true}); }

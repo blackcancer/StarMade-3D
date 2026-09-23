@@ -1,0 +1,95 @@
+{
+  "name": "starmade-3d",
+  "version": "1.0.0",
+  "description": "Clean TypeScript 3D interpretation library for StarMade assets.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs/assets.md",
+    "docs/api-stability.md",
+    "docs/inspection-api.md",
+    "docs/functional-map.md",
+    "docs/inspection-roadmap.md",
+    "docs/v1-validation.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "scripts": {
+    "build": "node node_modules/typescript/bin/tsc -p tsconfig.build.json",
+    "dev": "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 8001",
+    "shaders:embed": "node scripts/embed-starmade-shaders.mjs",
+    "smoke:isanth": "node scripts/isanth-webgl-smoke.mjs",
+    "references:check": "node scripts/check-references.mjs",
+    "test": "npm run test:tooling && npm run test:unit && npm run test:decoder",
+    "test:tooling": "node --test scripts/coverage/check.test.mjs scripts/check-references.test.mjs scripts/isanth-webgl-smoke.test.mjs scripts/block-texture-asset.test.mjs",
+    "test:unit": "node scripts/test-suite.mjs unit",
+    "test:decoder": "npm run references:check && node scripts/test-suite.mjs decoder",
+    "test:game": "npm run references:check && node scripts/test-suite.mjs game",
+    "test:all": "npm run references:check && node scripts/test-suite.mjs all",
+    "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "typecheck:unit": "node node_modules/typescript/bin/tsc -p tsconfig.unit.json --noEmit",
+    "coverage": "node scripts/coverage/run.mjs",
+    "coverage:check": "node scripts/coverage/run.mjs",
+    "coverage:report": "node scripts/coverage/run.mjs --report-only",
+    "validate:code": "npm run references:check && npm run typecheck && npm test && npm run coverage:check",
+    "validate:game": "npm run validate:code && npm run test:game && npm run smoke:isanth",
+    "test:render": "node scripts/render-parity-check.mjs",
+    "test:render:game": "node scripts/render-parity-check.mjs --game-assets",
+    "typecheck:browser": "node node_modules/typescript/bin/tsc -p tsconfig.browser.json --noEmit",
+    "typecheck:visual": "node node_modules/typescript/bin/tsc -p tsconfig.visual.json --noEmit",
+    "test:visual:index": "node scripts/visual-index-check.mjs",
+    "test:inspection": "node scripts/inspection-check.mjs",
+    "test:package": "node scripts/package-check.mjs",
+    "test:performance": "node scripts/performance-check.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "prepublishOnly": "npm run release:check",
+    "release:qualify": "node scripts/release-qualify.mjs",
+    "test:isanth:views": "node scripts/isanth-views-check.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/three": "^0.164.1",
+    "starmade-decoder": "file:../StarMade-Decoder",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11",
+    "esbuild": "0.28.2",
+    "three": "0.164.1"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "author": "InitSysRev <init-sys-rev@hotmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blackcancer/StarMade-3D.git"
+  },
+  "homepage": "https://github.com/blackcancer/StarMade-3D#readme",
+  "bugs": {
+    "url": "https://github.com/blackcancer/StarMade-3D/issues"
+  },
+  "keywords": [
+    "starmade",
+    "threejs",
+    "blueprint",
+    "inspection",
+    "webgl",
+    "docking"
+  ],
+  "peerDependencies": {
+    "three": "^0.164.1"
+  }
+}

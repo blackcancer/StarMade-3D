@@ -1,0 +1,14 @@
+import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import { releaseInputs } from './release-inputs.mjs';
+const proof=JSON.parse(readFileSync('validation/v1/qualification.json','utf8'));
+assert.equal(proof.ok,true);assert.equal(proof.version,'1.0.0');
+assert.deepEqual(proof.inputs,releaseInputs(),'Release inputs changed since qualification; rerun release:qualify');
+assert.equal(proof.commands.length,9);assert(proof.commands.every(c=>c.exitCode===0));
+const coverage=JSON.parse(readFileSync('coverage/verdict.json','utf8'));
+assert.equal(coverage.qualified,true);assert.equal(coverage.required.lines,100);assert.equal(coverage.required.branches,100);assert.equal(coverage.required.functions,100);
+const pkg=JSON.parse(readFileSync('package.json','utf8'));assert.equal(pkg.version,'1.0.0');assert.equal(pkg.name,'starmade-3d');
+for(const path of ['validation/v1/gpu/result.json','validation/v1/index/result.json','validation/v1/inspection/result.json','validation/v1/isanth/result.json','validation/v1/package.json','validation/v1/performance.json'])assert.equal(JSON.parse(readFileSync(path,'utf8')).ok,true,path);
+assert(!readFileSync('dist/shaders/sources.js','utf8').includes('gl_FragColor'),'Unexpected bundled native shader corpus');
+assert(!readFileSync('docs/v1-validation.md','utf8').includes('checks are in progress'),'Finish the release report before publishing');
+console.log('Release qualification matches current sources: PASS');

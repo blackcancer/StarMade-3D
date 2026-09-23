@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-20",
+  "decoder": {
+    "repository": "blackcancer/StarMade-Decoder",
+    "commit": "4cb21bd72258c87eb8115f90449a8334c34658a6",
+    "version": "2.0.0",
+    "directory": "../StarMade-Decoder",
+    "packageBlob": "709febf57e870a5c4a94db4ce9d3f8963c48aec4"
+  },
+  "gameSource": {
+    "repository": "blackcancer/StarMade-Open",
+    "commit": "decf3a1990f29b9505041f122188bf19489bcf7e",
+    "directory": "../StarMade-Open",
+    "verifiedFiles": {
+      "src/main/java/org/schema/game/common/data/world/SegmentData4Byte.java": "14b4663fe9d738cc6ba8e69362c0ae27ad879bd6",
+      "src/main/resources/data/shader/cube/quads13/cubeEncoding.glsl": "6500fbdc4c2daf608f6181ba1bfcbff3e067afb3"
+    }
+  },
+  "upstreamEvidence": {
+    "decoderValidationRun": 35503442853,
+    "artifactId": 10602903175,
+    "artifactSha256": "5b4b0c027322d29482bb0a8e8bafe428b09c16a79a868e535bb0a8b0414debc2",
+    "note": "Upstream CI evidence only. This is not local StarMade-3D integration or pixel-parity evidence."
+  }
+}

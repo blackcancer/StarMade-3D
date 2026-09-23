@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+validation/logs/
+*.log
+.DS_Store
+*.bak
+
+# Local test runner and browser evidence caches.
+.vite/
+artifacts/render-*/
+
+# Local evidence and generated assets are never part of the source release.
+artifacts/
+audit-*/
+validation/
+validation-history/
+*.tgz
+*.v1tmp

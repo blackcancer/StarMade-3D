@@ -1,0 +1,78 @@
+name: StarMade-3D validation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  code-and-gpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      STARMADE_SHADER_ROOT: ${{ github.workspace }}/StarMade-Open/src/main/resources/data/shader
+      STARMADE_OPEN_DIR: ${{ github.workspace }}/StarMade-Open
+      CHROMIUM_PATH: /tmp/starmade-chrome
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: StarMade-3D
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: blackcancer/StarMade-Decoder
+          ref: 4cb21bd72258c87eb8115f90449a8334c34658a6
+          path: StarMade-Decoder
+          persist-credentials: false
+      # This reference repository is private. No native corpus is committed here
+      # or attached to artifacts. Fork PRs require a trusted maintainer run.
+      - uses: actions/checkout@v4
+        with:
+          repository: blackcancer/StarMade-Open
+          ref: decf3a1990f29b9505041f122188bf19489bcf7e
+          token: ${{ secrets.STARMADE_REFERENCE_TOKEN }}
+          path: StarMade-Open
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Build pinned Decoder
+        working-directory: StarMade-Decoder
+        run: npm ci --ignore-scripts && npm run build
+      - name: Install library development dependencies
+        working-directory: StarMade-3D
+        run: npm ci --ignore-scripts
+      - name: Code, integration and per-file 100 percent gate
+        working-directory: StarMade-3D
+        run: npm run validate:code
+      - name: Package consumer
+        working-directory: StarMade-3D
+        run: npm run test:package
+      - name: CPU performance budgets
+        working-directory: StarMade-3D
+        run: npm run test:performance
+      - name: Chromium software WebGL
+        run: |
+          printf '#!/bin/sh\nexec /usr/bin/google-chrome --no-sandbox "$@"\n' > /tmp/starmade-chrome
+          chmod +x /tmp/starmade-chrome
+      - name: GPU regressions with external reference shaders
+        working-directory: StarMade-3D
+        run: npm run test:render
+      - name: Runtime dependency audit
+        working-directory: StarMade-3D
+        run: npm audit --omit=dev
+      - name: Preserve measured results, never native assets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starmade-3d-validation
+          path: |
+            StarMade-3D/coverage/REPORT.md
+            StarMade-3D/coverage/verdict.json
+            StarMade-3D/validation/v1/package.json
+            StarMade-3D/validation/v1/performance.json
+            StarMade-3D/artifacts/render-parity/result.json
+          retention-days: 14
