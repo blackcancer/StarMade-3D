@@ -9,14 +9,17 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const run = (command, args, cwd = work) => execFileSync(command, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 180000 });
 try {
   const packed = JSON.parse(run(npm, ['pack', '--ignore-scripts', '--json', '--pack-destination', work], root))[0];
-  assert.equal(packed.name, 'starmade-3d'); assert.equal(packed.version, '1.0.0');
+  assert.equal(packed.name, 'starmade-3d'); assert.equal(packed.version, JSON.parse(readFileSync(join(root,'package.json'),'utf8')).version);
   for (const f of packed.files) assert(!/(^|\/)(node_modules|tests|samples|artifacts|\.git|audit-|validation)/.test(f.path), f.path);
-  for (const name of ['docs/assets.md', 'docs/api-stability.md', 'docs/inspection-api.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md']) assert(packed.files.some(f => f.path === name), `Missing ${name}`);
+  for (const name of ['docs/assets.md', 'docs/api-stability.md', 'docs/inspection-api.md', 'docs/display-module.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md']) assert(packed.files.some(f => f.path === name), `Missing ${name}`);
   writeFileSync(join(work, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   run(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(work, packed.filename), 'three@0.164.1', '@types/three@0.164.1']);
   const consumer = `import assert from 'node:assert/strict';
 import { Matrix4, Group } from 'three';
-import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose } from 'starmade-3d';
+import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose, StarMadeDisplayValues, STARMADE_DISPLAY_VARIABLES, parseStarMadeDisplayText, createStarMadeDisplayPanel } from 'starmade-3d';
+const values = new StarMadeDisplayValues(); values.set('ship', {power:12, shieldHp0:900});
+assert.equal(parseStarMadeDisplayText('[power] / [shieldHp0]', values.forEntity('ship').resolve).text,'12 / 900');
+assert.equal(STARMADE_DISPLAY_VARIABLES.length,46); assert.equal(typeof createStarMadeDisplayPanel,'function');
 assert.equal(Object.keys(STARMADE_SHADER_SOURCES).length,0);
 assert.throws(()=>createStarMadeCubeShaderMaterial(), /shader source/);
 setStarMadeShaderSources({'data/shader/consumer.vert':'void main() {}'});
@@ -27,12 +30,13 @@ const next=doc.apply(0,[{kind:'block',ref:{entityId:'root',position:[0,0,0]},sta
 assert.equal(view.sync(next).lighting,true);assert.equal(released,1);view.dispose();assert.equal(typeof resolveStarMadeRailPose,'function');
 console.log('consumer imports, shared Three.js, external shaders, sync and disposal PASS');`;
   writeFileSync(join(work, 'consumer.mjs'), consumer); const output = run(process.execPath, ['consumer.mjs']);
-  writeFileSync(join(work, 'consumer.ts'), `import { InspectionDocument, InspectionScene, type BlockReference, loadStarMadeShaderSources } from 'starmade-3d';\nimport { Group } from 'three';\nconst ref: BlockReference={entityId:'root',position:[0,0,0]};\nconst view=new InspectionScene(()=>({object:new Group(),dispose(){}}));\nview.sync(new InspectionDocument('typed',0,[]));\nvoid ref;void loadStarMadeShaderSources;\n`);
+  writeFileSync(join(work, 'consumer.ts'), `import { InspectionDocument, InspectionScene, type BlockReference, loadStarMadeShaderSources, StarMadeDisplayValues, type StarMadeDisplayPanelOptions } from 'starmade-3d';\nimport { Group } from 'three';\nconst ref: BlockReference={entityId:'root',position:[0,0,0]};\nconst view=new InspectionScene(()=>({object:new Group(),dispose(){}}));\nview.sync(new InspectionDocument('typed',0,[]));\nconst values=new StarMadeDisplayValues();values.set('ship',{power:42});const options:Pick<StarMadeDisplayPanelOptions,'values'>={values:values.forEntity('ship')};void options;void ref;void loadStarMadeShaderSources;\n`);
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
   const tree = JSON.parse(run(npm, ['ls', 'three', '--json']));
   assert.equal(tree.dependencies.three.version,'0.164.1');
   const installed = readFileSync(join(work,'node_modules/starmade-3d/dist/shaders/sources.js'),'utf8');
   assert(!installed.includes('gl_FragColor')); assert(installed.length<6000);
   const report = { ok:true, package:packed.filename, size:packed.size, unpackedSize:packed.unpackedSize, files:packed.files.length, integrity:packed.integrity, output, types:true, noBundledShaderCorpus:true };
-  mkdirSync('validation/v1', { recursive:true }); writeFileSync('validation/v1/package.json',JSON.stringify(report,null,2)+'\n'); console.log(JSON.stringify(report,null,2));
+  const outputDirectory=process.env.STARMADE_PACKAGE_OUTPUT ?? 'validation/v1';
+  mkdirSync(outputDirectory, { recursive:true }); writeFileSync(join(outputDirectory,'package.json'),JSON.stringify(report,null,2)+'\n'); console.log(JSON.stringify(report,null,2));
 } finally { rmSync(work,{recursive:true,force:true}); }

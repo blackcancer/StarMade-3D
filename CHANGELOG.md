@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1 — 2026-09-23
+
+- Add entity-scoped calculated display values (`StarMadeDisplayValues`) and the complete 46-entry StarMade-Open variable catalog, including indexed reactor/shield families and documented native token collision.
+- Restore Display Module (479) holographic screens and text, using host-owned screen textures and the native Monda font.
+- Preserve orientation-bearing saved text keys through the blueprint adapter, including docked entities.
+- Support native style headers, multiline text, all six face frames, dynamic host substitutions, password masking and text draw distance.
+- Reallocate resized Canvas textures for Three.js r164/WebGL2 and release owned GPU resources without disposing shared assets.
+- Add a display demonstration and GPU regressions for all orientations, text updates and depth occlusion.
+
+- Fix browser shutdown in the Isanth acceptance recipe and qualify Display rendering as a release requirement.
+
 ## 1.0.0 — 2026-09-23
 
 ### Added

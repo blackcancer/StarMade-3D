@@ -29,3 +29,7 @@ export * from "./inspection/highlight.js";
 export * from "./inspection/functional.js";
 export * from "./inspection/blueprint.js";
 export * from './starmade/docking.js';
+export * from './starmade/displayText.js';
+export * from './viewer/createStarMadeDisplayPanel.js';
+
+export * from './starmade/displayValues.js';

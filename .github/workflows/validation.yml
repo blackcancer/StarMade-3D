@@ -51,6 +51,9 @@ jobs:
       - name: Package consumer
         working-directory: StarMade-3D
         run: npm run test:package
+      - name: Native Display variable catalog contract
+        working-directory: StarMade-3D
+        run: STARMADE_TEST_SUITE=game node node_modules/vitest/vitest.mjs run tests/integration/display.game.test.ts
       - name: CPU performance budgets
         working-directory: StarMade-3D
         run: npm run test:performance

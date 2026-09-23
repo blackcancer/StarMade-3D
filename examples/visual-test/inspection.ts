@@ -1,3 +1,6 @@
+import { attachDisplays, loadDisplayAssets } from './displayAssets.js';
+const displayAssets = await loadDisplayAssets();
+let displayPanels: ReturnType<typeof attachDisplays> = [];
 import { loadStarMadeShaderSources } from '../../src/shaders/sources.js';
 await loadStarMadeShaderSources('/starmade-assets/shaders.json');
 import { AmbientLight, Color, Float32BufferAttribute, MeshBasicMaterial, DirectionalLight, Group, Matrix4, Mesh, MeshStandardMaterial, Texture, Vector3, ShaderMaterial, type Material, type BufferGeometry, type Object3D, OrthographicCamera, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer } from 'three';
@@ -144,6 +147,7 @@ function adopt(doc: InspectionDocument, loaded?: StarMadeLodPrototypeLoadResult,
   element('cut-value').textContent = 'Aucune'; element('caption').textContent = `${surfaceAssets ? 'Textures StarMade' : 'Couleurs d’inspection'} · Cliquer pour sélectionner · Maj : sélection multiple`; rebuild(); oldHandle?.release(); oldSurfaceHandle?.release(); frame();
 }
 function rebuild() {
+  displayPanels.forEach(panel => panel.dispose()); displayPanels = [];
   diffOverlays.forEach(o => o.dispose()); diffOverlays = [];
   disposers.forEach(dispose => dispose()); disposers = []; group.clear();
   refreshMapControls();
@@ -156,6 +160,10 @@ function rebuild() {
   }), blockDefinitions: definitions, rayCount: 128 });
   for (const entity of current.entities) {
     const root = new Group(); root.matrixAutoUpdate = false; root.matrix.copy(entityWorldMatrix(current, entity.id)); group.add(root);
+    const panels = attachDisplays(root, current.query(b => b.ref.entityId === entity.id && predicate(b)).map(b => ({position:b.ref.position,state:b.state})), blueprintNodes.find(node => node.id === entity.id)?.displayTexts ?? [], displayAssets);
+    const displayBlocks = current.query(b => b.ref.entityId === entity.id && predicate(b) && b.state.type === 479);
+    panels.forEach((panel,i) => { hits.bindBlock(panel.root,current,displayBlocks[i].ref); disposers.push(()=>hits.unbind(panel.root)); });
+    displayPanels.push(...panels);
     for (const entry of buildInspectionSegments(current, entity.id, predicate, { blockDefinitions: definitions, starMadeAtlasLayout: surfaceAssets?.pack.layout, isBlockMeshed: context => !context.blockDefinition || !lodPrototypes.has(starMadeBlockLodModelName(context.blockDefinition, context.block.active)) })) {
       for (const pass of ['opaque', 'blended'] as const) {
         const geometry = entry.batches[pass];
@@ -288,9 +296,10 @@ renderer.setAnimationLoop(time => {
     updateStarMadeCubeShaderTime(material, delta); updateStarMadeCubeShaderClipPlanes(material, camera.near, camera.far); updateStarMadeCubeShaderMVP(material, camera.matrixWorldInverse, camera.projectionMatrix); material.uniforms.viewPos.value.copy(camera.position);
   }
   for (const material of lodMaterials) material.uniforms.viewPos.value.copy(camera.position);
+  displayPanels.forEach(panel => panel.updateVisibility(camera));
   renderer.render(scene, camera);
 });
-window.addEventListener('pagehide', () => { loadController?.abort(); pool.dispose(); overlay.dispose(); relationOverlay?.dispose(); diffOverlays.forEach(o => o.dispose()); disposers.forEach(d => d()); lodHandle?.release(); lodPool.dispose(); surfaceHandle?.release(); surfaces.dispose(); controls.dispose(); renderer.setAnimationLoop(null); renderer.dispose(); });
+window.addEventListener('pagehide', () => { displayPanels.forEach(panel=>panel.dispose()); displayAssets.dispose(); loadController?.abort(); pool.dispose(); overlay.dispose(); relationOverlay?.dispose(); diffOverlays.forEach(o => o.dispose()); disposers.forEach(d => d()); lodHandle?.release(); lodPool.dispose(); surfaceHandle?.release(); surfaces.dispose(); controls.dispose(); renderer.setAnimationLoop(null); renderer.dispose(); });
 fixture();
 // Read-only browser acceptance hooks; the application remains usable without them.
 Object.assign(globalThis, { __INSPECTION_DEMO__: { get document() { return current; }, get functionalMap() { return functionalMap; }, get blueprintNodes() { return blueprintNodes; }, get diff() { return lastDiff; }, get camera() { return camera; }, get filter() { return filter; }, group, hits, selection, renderer, scene } });

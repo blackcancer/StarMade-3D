@@ -1,3 +1,4 @@
+import { starMadeDisplayTextsFromManager, type StarMadeDisplayText } from '../starmade/displayText.js';
 import type { SegmentDataLike } from '../starmade/segmentData.js';
 import type { BlueprintControllerLike } from './functional.js';
 import { Matrix4 } from 'three';
@@ -19,6 +20,7 @@ export interface InspectionBlueprintEntityLike {
   readonly children: readonly InspectionBlueprintEntityLike[];
   readonly logic?: { readonly controllers: readonly BlueprintControllerLike[] } | null;
   readonly meta?: {
+    readonly manager?: unknown;
     readonly childTransforms: readonly { readonly name: string; readonly mode: 'rail' | 'docking'; readonly offset: Offset }[];
     readonly railChildren: readonly { readonly name: string; readonly request: RailRequest | null }[];
   } | null;
@@ -29,6 +31,7 @@ export interface InspectionBlueprintNode {
   readonly headerVersion: number; readonly usedSlots: number;
   readonly segments: readonly SegmentDataLike[];
   readonly controllers: readonly BlueprintControllerLike[];
+  readonly displayTexts?: readonly StarMadeDisplayText[];
   readonly docking: { readonly mode: 'rail' | 'docking' | 'unknown'; readonly parentConnector: BlockPosition | null; readonly childConnector: BlockPosition | null; readonly rawRailRequest: RailRequest | null } | null;
 }
 const tuple = (p: Offset): BlockPosition => [p.x, p.y, p.z];
@@ -51,6 +54,7 @@ export function inspectionBlueprintEntities(root: InspectionBlueprintEntityLike,
       usedSlots: entity.segments.reduce((total, file) => total + file.usedSlots, 0),
       segments: entity.segments.flatMap(file => file.segments.map(s => ({ x: s.x, y: s.y, z: s.z, blockCount: s.blockCount, version: s.version, lastChanged: s.lastChanged?.toString(), blocks: s.blocks }))),
       controllers: entity.logic?.controllers ?? [],
+      displayTexts: starMadeDisplayTextsFromManager(entity.meta?.manager),
       docking: parent ? { mode: transform?.mode ?? 'unknown', parentConnector: connector(request?.rail?.position), childConnector: connector(request?.docked?.position), rawRailRequest: request } : null
     };
     nodes.push(node);

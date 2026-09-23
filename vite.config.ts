@@ -33,6 +33,17 @@ export default defineConfig({
           try { res.setHeader('Content-Type', 'application/json'); res.setHeader('Cache-Control', 'no-store'); res.end(JSON.stringify(readShaderCorpus())); }
           catch (error) { res.statusCode = 500; res.end(String(error)); }
         });
+        server.middlewares.use('/starmade-assets/display', (req, res, next) => {
+          const assets: Record<string, [string, string]> = {
+            '/Monda-Regular.ttf': ['data/font/Monda-Regular.ttf', 'font/ttf'],
+            '/screen-gui-blue.png': ['data/image-resource/screen-gui-blue.png', 'image/png']
+          };
+          const asset = assets[req.url ?? ''];
+          if (!asset) { next(); return; }
+          res.setHeader('Content-Type', asset[1]);
+          const stream = createReadStream(resolve(starmadeRoot, asset[0]));
+          stream.on('error', next); stream.pipe(res);
+        });
         server.middlewares.use("/starmade-assets/textures/block", (req, res, next) => {
           if (!req.url) {
             next();

@@ -25,4 +25,4 @@ for (const side of [16,32,64]) {
   }
 }
 const report={ok:true,node:process.version,cpu:cpus()[0].model,scope:'CPU logical documents, native segment meshing and per-cell sync; no GPU FPS claim',peakRssBytes:process.resourceUsage().maxRSS*1024,measures};
-assert(report.peakRssBytes<1536*1024*1024,'Peak RSS exceeds 1.5 GiB');mkdirSync('validation/v1',{recursive:true});writeFileSync('validation/v1/performance.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
+assert(report.peakRssBytes<1536*1024*1024,'Peak RSS exceeds 1.5 GiB');const output=process.env.STARMADE_PERFORMANCE_OUTPUT ?? 'validation/v1';mkdirSync(output,{recursive:true});writeFileSync(output+'/performance.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));

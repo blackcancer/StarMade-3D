@@ -23,5 +23,5 @@ try{
  await writeFile(out+'/lights.json',JSON.stringify(await ev(`__CLOSE_AUDIT__.isanthBlockLight.occupied.filter(o=>o.blockDefinition.lightSource||o.blockDefinition.slab>0).map(o=>({name:o.blockDefinition.name,slab:o.blockDefinition.slab,position:o.worldPosition,orientation:o.block.orientation,active:o.block.active}))`),null,2));
  await writeFile(out+'/result.json',JSON.stringify({ok:errors.length===0,errors,readyState:await ev('window.__STARMADE_3D_READY__')},null,2));
  if (errors.length) throw Error('Isanth runtime exceptions');
- await send('Browser.close');
-}catch(e){await writeFile(out+'/error.txt',String(e.stack??e));throw e}finally{socket?.close();browser.kill();await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200}).catch(()=>{})}
+ // The owned process is stopped in finally: Chrome may close CDP before acknowledging Browser.close.
+}catch(e){await writeFile(out+'/error.txt',String(e.stack??e));throw e}finally{socket?.close();const stopped=new Promise(resolve=>browser.once('exit',resolve));browser.kill();await Promise.race([stopped,delay(2000)]);await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:200}).catch(()=>{})}

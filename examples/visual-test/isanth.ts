@@ -1,3 +1,5 @@
+import { attachDisplays, loadDisplayAssets } from './displayAssets.js';
+import { blocksFromSegments, type StarMadeDisplayText } from '../../src/index.js';
 import { loadStarMadeShaderSources } from '../../src/shaders/sources.js';
 await loadStarMadeShaderSources('/starmade-assets/shaders.json');
 import {
@@ -72,6 +74,7 @@ interface Smd3ScenePayload {
 }
 
 interface Smd3EntityPayload {
+  readonly displayTexts?: readonly StarMadeDisplayText[];
   readonly name: string;
   readonly headerVersion: number;
   readonly usedSlots: number;
@@ -80,6 +83,7 @@ interface Smd3EntityPayload {
 }
 
 interface SceneEntity {
+  readonly displayTexts?: readonly StarMadeDisplayText[];
   readonly name: string;
   readonly offset: readonly [number, number, number];
   readonly segments: readonly SegmentDataLike[];
@@ -481,6 +485,9 @@ for (const cubeMaterial of cubeMaterials) {
   );
 }
 shadowPipeline.applyToLodObject3D(segmentRoot);
+const displayAssets = await loadDisplayAssets();
+const displayPanels = sceneEntities.flatMap(entity => attachDisplays(entityRoots.get(entity.name)!, blocksFromSegments(entity.segments), entity.displayTexts ?? [], displayAssets));
+window.addEventListener("pagehide",()=>{displayPanels.forEach(panel=>panel.dispose());displayAssets.dispose();});
 
 window.addEventListener("resize", resize);
 resize();
@@ -597,6 +604,7 @@ function frame(): void {
 
   // All passes must observe the same animation frame.
   shadowPipeline.render(renderer);
+  displayPanels.forEach(panel => panel.updateVisibility(camera));
   renderer.render(scene, camera);
 
   if (!didPublishReadyState) {
@@ -849,7 +857,7 @@ function createSceneEntities(smd3: Smd3ScenePayload): readonly SceneEntity[] {
     return smd3.entities.map((entity) => ({
       name: entity.name,
       offset: entity.offset ?? [0, 0, 0],
-      segments: entity.segments
+      segments: entity.segments, displayTexts: entity.displayTexts
     }));
   }
 
