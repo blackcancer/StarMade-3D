@@ -1,0 +1,56 @@
+name: StarMade-Logic SDK integration package
+on:
+  push:
+    branches: [logic/integration-package-20260923]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: StarMade-3D
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: blackcancer/StarMade-Decoder
+          ref: 8707f2293f8b389e044f68cfb9fb01b635db8886
+          path: StarMade-Decoder
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Build pinned Decoder
+        working-directory: StarMade-Decoder
+        run: npm ci --ignore-scripts && npm run build
+      - name: Build renderer
+        working-directory: StarMade-3D
+        run: npm ci --ignore-scripts && npm run build
+      - name: Assemble browser runtime and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p distribution/starmade-3d distribution/three distribution/decoder
+          cp -R StarMade-3D/dist distribution/starmade-3d/
+          cp StarMade-3D/package.json StarMade-3D/LICENSE distribution/starmade-3d/
+          cp -R StarMade-3D/src distribution/starmade-3d/source
+          cp -R StarMade-3D/node_modules/three/build distribution/three/
+          cp -R StarMade-3D/node_modules/three/examples/jsm distribution/three/addons
+          cp StarMade-3D/node_modules/three/package.json StarMade-3D/node_modules/three/LICENSE distribution/three/
+          cp -R StarMade-Decoder/dist distribution/decoder/
+          cp StarMade-Decoder/package.json StarMade-Decoder/LICENSE distribution/decoder/
+          git -C StarMade-3D rev-parse HEAD > distribution/renderer-commit.txt
+          git -C StarMade-Decoder rev-parse HEAD > distribution/decoder-commit.txt
+          node --version > distribution/node-version.txt
+          printf '%s\n' 'Renderer implementation baseline: 237f95687c6fac468728c71240ca300243bc2db0. The integration branch adds this packaging workflow only. No game textures, models or font resources are included. A successful build is not native-game or pixel-parity qualification.' > distribution/PROVENANCE.txt
+          find distribution -type f \( -iname '*.ttf' -o -iname '*.otf' -o -iname '*.woff' -o -iname '*.woff2' \) -delete
+          (cd distribution && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starmade-logic-sdk-runtime
+          path: distribution/
+          retention-days: 7
+          if-no-files-found: error
