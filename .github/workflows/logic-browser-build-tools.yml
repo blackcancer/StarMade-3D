@@ -1,0 +1,30 @@
+name: StarMade-Logic browser build tools
+on:
+  push:
+    branches: [logic/integration-package-20260923]
+    paths: [.github/workflows/logic-browser-build-tools.yml]
+permissions:
+  contents: read
+jobs:
+  tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Install fixed build and byte-buffer dependencies
+        run: |
+          mkdir browser-tools && cd browser-tools
+          printf '%s\n' '{"name":"starmade-logic-browser-tools","private":true,"version":"1.0.0","dependencies":{"buffer":"6.0.3","esbuild":"0.28.2"}}' > package.json
+          npm install --ignore-scripts
+          node -e "require('esbuild').transformSync('const x = 1', {target:'es2023'}); console.log(require('buffer').Buffer.from([1,2,3]).readUInt16BE(0));"
+          find . -type f \( -iname '*.ttf' -o -iname '*.otf' -o -iname '*.woff' -o -iname '*.woff2' \) -delete
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starmade-logic-browser-build-tools
+          path: browser-tools/
+          retention-days: 3
+          if-no-files-found: error
+          include-hidden-files: true
