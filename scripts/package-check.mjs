@@ -11,12 +11,13 @@ try {
   const packed = JSON.parse(run(npm, ['pack', '--ignore-scripts', '--json', '--pack-destination', work], root))[0];
   assert.equal(packed.name, 'starmade-3d'); assert.equal(packed.version, JSON.parse(readFileSync(join(root,'package.json'),'utf8')).version);
   for (const f of packed.files) assert(!/(^|\/)(node_modules|tests|samples|artifacts|\.git|audit-|validation)/.test(f.path), f.path);
-  for (const name of ['docs/assets.md', 'docs/api-stability.md', 'docs/inspection-api.md', 'docs/display-module.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md']) assert(packed.files.some(f => f.path === name), `Missing ${name}`);
+  for (const name of ['docs/assets.md', 'docs/api-stability.md', 'docs/inspection-api.md', 'docs/display-module.md', 'docs/blueprint-lod.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md']) assert(packed.files.some(f => f.path === name), `Missing ${name}`);
   writeFileSync(join(work, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   run(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(work, packed.filename), 'three@0.164.1', '@types/three@0.164.1']);
   const consumer = `import assert from 'node:assert/strict';
 import { Matrix4, Group } from 'three';
-import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose, StarMadeDisplayValues, STARMADE_DISPLAY_VARIABLES, parseStarMadeDisplayText, createStarMadeDisplayPanel } from 'starmade-3d';
+import { InspectionDocument, InspectionScene, STARMADE_SHADER_SOURCES, createStarMadeCubeShaderMaterial, setStarMadeShaderSources, inspectEntityHierarchy, resolveStarMadeRailPose, StarMadeDisplayValues, STARMADE_DISPLAY_VARIABLES, parseStarMadeDisplayText, createStarMadeDisplayPanel, streamStarMadeInspection, encodeStarMadeInspectionFrame, readStarMadeInspectionStream, createStarMadeBlueprintLod, createStarMadeBlueprintLodScene } from 'starmade-3d';
+import { getStarMadeLodCacheDirectory, buildStarMadeLodCache, readStarMadeLodCache } from 'starmade-3d/node';
 const values = new StarMadeDisplayValues(); values.set('ship', {power:12, shieldHp0:900});
 assert.equal(parseStarMadeDisplayText('[power] / [shieldHp0]', values.forEntity('ship').resolve).text,'12 / 900');
 assert.equal(STARMADE_DISPLAY_VARIABLES.length,56); assert.equal(typeof createStarMadeDisplayPanel,'function');
@@ -28,9 +29,17 @@ let released=0; const view = new InspectionScene(()=>({object:new Group(),dispos
 view.sync(doc); assert.equal(view.root.isGroup,true); assert.equal(inspectEntityHierarchy(doc)[1].depth,1);
 const next=doc.apply(0,[{kind:'block',ref:{entityId:'root',position:[0,0,0]},state:null}]);
 assert.equal(view.sync(next).lighting,true);assert.equal(released,1);view.dispose();assert.equal(typeof resolveStarMadeRailPose,'function');
+async function* input() { yield {kind:'entity',path:'ship',parentPath:null,name:'ship'}; yield {kind:'segment',entityPath:'ship',x:0,y:0,z:0,headerVersion:6,words:new Uint32Array(32768)}; yield {kind:'end',status:'complete',diagnostics:[]}; }
+async function* frames() { for await(const event of streamStarMadeInspection(input())) yield encodeStarMadeInspectionFrame(event); }
+const events=[];for await(const event of readStarMadeInspectionStream(frames()))events.push(event);
+assert.deepEqual(events.map(e=>e.kind),['entity','segment','end']);assert.equal(events[1].segment.blockCount,0);
+assert.equal(getStarMadeLodCacheDirectory('/data/ship.0.0.0.smd3'),'/data/ship.0.0.0');
+assert.equal(typeof buildStarMadeLodCache,'function');assert.equal(typeof readStarMadeLodCache,'function');
+const lod=createStarMadeBlueprintLod({segments:[],cellSize:2});assert.equal(lod.triangleCount,0);
+const lodView=createStarMadeBlueprintLodScene({entities:[],regions:[]});assert.equal(lodView.root.isGroup,true);lodView.dispose();
 console.log('consumer imports, shared Three.js, external shaders, sync and disposal PASS');`;
   writeFileSync(join(work, 'consumer.mjs'), consumer); const output = run(process.execPath, ['consumer.mjs']);
-  writeFileSync(join(work, 'consumer.ts'), `import { InspectionDocument, InspectionScene, type BlockReference, loadStarMadeShaderSources, StarMadeDisplayValues, type StarMadeDisplayPanelOptions } from 'starmade-3d';\nimport { Group } from 'three';\nconst ref: BlockReference={entityId:'root',position:[0,0,0]};\nconst view=new InspectionScene(()=>({object:new Group(),dispose(){}}));\nview.sync(new InspectionDocument('typed',0,[]));\nconst values=new StarMadeDisplayValues();values.set('ship',{power:42});const options:Pick<StarMadeDisplayPanelOptions,'values'>={values:values.forEntity('ship')};void options;void ref;void loadStarMadeShaderSources;\n`);
+  writeFileSync(join(work, 'consumer.ts'), `import { getStarMadeLodCacheDirectory, type StarMadeLodCacheOptions } from 'starmade-3d/node';\nimport { createStarMadeBlueprintLod, type StarMadeBlueprintLodSceneData } from 'starmade-3d';\nconst cache:StarMadeLodCacheOptions={sourcePath:'ship.smd3',configurationKey:'hash'};const lod:StarMadeBlueprintLodSceneData={entities:[],regions:[]};void getStarMadeLodCacheDirectory;void createStarMadeBlueprintLod;void cache;void lod;\nimport { InspectionDocument, InspectionScene, type BlockReference, loadStarMadeShaderSources, StarMadeDisplayValues, type StarMadeDisplayPanelOptions, streamStarMadeInspection, type StarMadeBlueprintStreamEvent } from 'starmade-3d';\nimport { Group } from 'three';\nconst ref: BlockReference={entityId:'root',position:[0,0,0]};\nconst view=new InspectionScene(()=>({object:new Group(),dispose(){}}));\nview.sync(new InspectionDocument('typed',0,[]));\nconst values=new StarMadeDisplayValues();values.set('ship',{power:42});const options:Pick<StarMadeDisplayPanelOptions,'values'>={values:values.forEntity('ship')};const stream: AsyncIterable<StarMadeBlueprintStreamEvent> = { async *[Symbol.asyncIterator]() { yield {kind:'end',status:'complete',diagnostics:[]}; } };void streamStarMadeInspection(stream);void options;void ref;void loadStarMadeShaderSources;\n`);
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2022', 'consumer.ts']);
   const tree = JSON.parse(run(npm, ['ls', 'three', '--json']));
   assert.equal(tree.dependencies.three.version,'0.164.1');

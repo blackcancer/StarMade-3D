@@ -1,6 +1,6 @@
 {
   "name": "starmade-3d",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Clean TypeScript 3D interpretation library for StarMade assets.",
   "type": "module",
   "private": false,
@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/lodCache.d.ts",
+      "import": "./dist/node/lodCache.js"
     }
   },
   "files": [
@@ -28,7 +32,10 @@
     "THIRD_PARTY_NOTICES.md",
     "docs/display-module.md",
     "docs/v1.0.1-validation.md",
-    "docs/v1.0.2-validation.md"
+    "docs/v1.0.2-validation.md",
+    "docs/streaming.md",
+    "docs/blueprint-lod.md",
+    "docs/v1.1.0-validation.md"
   ],
   "scripts": {
     "build": "node node_modules/typescript/bin/tsc -p tsconfig.build.json",
@@ -37,7 +44,7 @@
     "smoke:isanth": "node scripts/isanth-webgl-smoke.mjs",
     "references:check": "node scripts/check-references.mjs",
     "test": "npm run test:tooling && npm run test:unit && npm run test:decoder",
-    "test:tooling": "node --test scripts/coverage/check.test.mjs scripts/check-references.test.mjs scripts/isanth-webgl-smoke.test.mjs scripts/block-texture-asset.test.mjs",
+    "test:tooling": "node --test scripts/coverage/check.test.mjs scripts/check-references.test.mjs scripts/isanth-webgl-smoke.test.mjs scripts/block-texture-asset.test.mjs scripts/blueprint-stream.test.mjs",
     "test:unit": "node scripts/test-suite.mjs unit",
     "test:decoder": "npm run references:check && node scripts/test-suite.mjs decoder",
     "test:game": "npm run references:check && node scripts/test-suite.mjs game",
@@ -61,7 +68,10 @@
     "prepublishOnly": "npm run release:check",
     "release:qualify": "node scripts/release-qualify.mjs",
     "test:isanth:views": "node scripts/isanth-views-check.mjs",
-    "test:display": "node scripts/display-check.mjs"
+    "test:display": "node scripts/display-check.mjs",
+    "lod:prepare": "npm run build && node scripts/prepare-blueprint-lod.mjs",
+    "test:lod": "node scripts/blueprint-lod-check.mjs",
+    "test:lod:host": "npm run build && node --test scripts/blueprint-lod.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",

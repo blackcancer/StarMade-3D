@@ -1,6 +1,6 @@
 # StarMade-3D
 
-**1.0.2** — TypeScript/ESM library for rendering and inspecting decoded StarMade
+**1.1.0** — TypeScript/ESM library for rendering and inspecting decoded StarMade
 creations with Three.js. Independent project by InitSysRev.
 
 It provides native block/LOD rendering adapters, immutable inspection snapshots,
@@ -13,7 +13,7 @@ The consuming program owns its UI, colors, renderer, persistence and history.
 Like StarMade-Decoder, the npm-compatible package is attached to the GitHub release:
 
 ```sh
-npm install https://github.com/blackcancer/StarMade-3D/releases/download/v1.0.2/starmade-3d-1.0.2.tgz three@0.164.1
+npm install https://github.com/blackcancer/StarMade-3D/releases/download/v1.1.0/starmade-3d-1.1.0.tgz three@0.164.1
 # TypeScript consumers also need the Three.js declarations:
 npm install --save-dev @types/three@0.164.1
 ```
@@ -58,9 +58,11 @@ corpora identified in the validation report; arbitrary future corpora are not gu
 
 ## Documentation
 
-Version 1.0.2 includes the [Display Module text pipeline](docs/display-module.md)
-and `/display.html`, with entity-scoped calculated values and the complete native variable catalog.
-See the [1.0.2 validation report](docs/v1.0.2-validation.md).
+Version 1.1.0 adds [streaming](docs/streaming.md) and persistent
+[blueprint LOD previews](docs/blueprint-lod.md), including the Node sidecar cache API.
+The [Display Module text pipeline](docs/display-module.md) continues to expose
+entity-scoped calculated values and the native variable catalog.
+See the [1.1.0 validation report](docs/v1.1.0-validation.md).
 
 - [API contracts and examples](docs/inspection-api.md)
 - [Functional maps and dockings](docs/functional-map.md)
@@ -102,3 +104,14 @@ The examples read an existing installation; they do not modify game files.
 Texture conversion requires ImageMagick (`magick`) and `unzip`.
 
 MIT for the library; game resources retain their own terms. See LICENSE and notices.
+
+## Progressive loading
+
+Decoder 2.1.0 streams can be consumed segment by segment with
+`streamStarMadeInspection`. Isanth uses a binary stream and displays a progressive
+preview before final lighting and LOD preparation. See [streaming API and limits](docs/streaming.md).
+
+Persistent [blueprint LOD previews](docs/blueprint-lod.md) can be prepared beside
+each SMD3 in a directory with the same stem. They merge coarse cells, use averaged
+colors and preserve docked entity transforms. `/isanth-lod.html` shows the cached
+preview; `/isanth.html` uses it before progressive native rendering.

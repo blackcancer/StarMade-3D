@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 — 2026-09-24
+
+- Add persistent per-SMD3 blueprint LOD sidecars, levels 1/2/4, greedy face merging, averaged local colors and simplified self-emission.
+- Add a separate Node cache API with source/dependency hashes, incremental reuse, atomic manifests, cancellation and collision protection.
+- Preserve attachment hierarchy/poses in cached previews; show the cache before Isanth streaming and provide a dedicated texture-free LOD example.
+- Document companion folder naming, invalidation, generation commands and approximation limits; add CPU, cache and browser regressions.
+
+- Prepare Isanth preview/final shaders asynchronously and initialize texture uploads across frames, with separate loading diagnostics and reproducible opt-out comparisons.
+
+- Integrate Decoder 2.1.0 demand-driven blueprint streams with sparse segment conversion and preserved inspection metadata.
+- Add bounded binary framing, cancellation and strict completion handling for browser transport.
+- Load Isanth progressively, repair arriving segment boundaries, and retain the existing final lighting/LOD/Display passes.
+- Test real blueprint parity and qualify progressive loading in the Isanth browser recipe.
+
 ## 1.0.2 — 2026-09-23
 
 - Update the pinned development/integration reference and CI checkout to StarMade-Decoder 2.0.1 (`ed9d3bec`).

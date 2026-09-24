@@ -1,0 +1,13 @@
+import { Color, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { loadBlueprintLodPreview } from './blueprintLodPreview.js';
+import './style.css';
+const renderer=new WebGLRenderer({canvas:document.querySelector<HTMLCanvasElement>('#viewport')!,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new Scene();scene.background=new Color(0x0f1117);
+const camera=new PerspectiveCamera(50,1,.1,5000),controls=new OrbitControls(camera,renderer.domElement);
+const preview=await loadBlueprintLodPreview(renderer,scene,camera,controls);
+if(!preview)throw new Error('LOD cache missing: prepare this blueprint first');
+renderer.setAnimationLoop(()=>{controls.update();preview.handle.update(camera);renderer.render(scene,camera);});
+window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+window.addEventListener('pagehide',()=>{renderer.setAnimationLoop(null);preview.dispose();controls.dispose();renderer.dispose();},{once:true});

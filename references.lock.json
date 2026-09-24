@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-23",
+  "verifiedAt": "2026-09-24",
   "decoder": {
     "repository": "blackcancer/StarMade-Decoder",
-    "commit": "ed9d3becdb139eaf665c27a23c6ef3ef60d687d9",
-    "version": "2.0.1",
+    "commit": "e84ef38e757fb6ff1c56ffabf8c35205bfb200f2",
+    "version": "2.1.0",
     "directory": "../StarMade-Decoder",
-    "packageBlob": "9092b7b7bc94de9fcba3364cec1c1c4414945b2f"
+    "packageBlob": "8315f48bd91ebe917984d417b3ea474fd46defcb"
   },
   "gameSource": {
     "repository": "blackcancer/StarMade-Open",

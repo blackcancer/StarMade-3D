@@ -1,7 +1,9 @@
-# Public API and compatibility — 1.0.0
+# Public API and compatibility — 1.1.0
 
 The package is ESM, with declarations at its root export `starmade-3d`. Runtime
-exports from `src/index.ts` and their declaration types are the supported API.
+exports from `src/index.ts` and their declaration types are the supported browser
+API. The separate `starmade-3d/node` export exposes the filesystem LOD cache API
+and its types; it is supported in Node and does not enter the browser module graph.
 Deep imports are not exported and private helper implementation is not a contract.
 Breaking changes to supported signatures, coordinate conventions, ownership or raw
 state preservation require a major version. Additive APIs and fixes use minor/patch
@@ -10,7 +12,7 @@ and intentional deviations from the native pipeline must be documented.
 
 Node >=22.16 is the supported tooling/headless environment. Browser native rendering
 requires WebGL2. Three.js `^0.164.1` is a peer so the host and library share constructors
-and GPU resources. Other Three.js minors and WebGPU are not qualified in 1.0.0.
+and GPU resources. Other Three.js minors and WebGPU are not qualified in 1.1.0.
 
 The host owns the renderer, scene, camera, loop, data persistence, application history,
 asset authorization and commands. Functional groups and saved relations are data;
@@ -34,6 +36,12 @@ simulate rail movement or automatically voxelize arbitrary affine geometry.
 
 Animation helpers provide deterministic sampling and native supported material updates,
 not a gameplay clock. glTF export reports approximated shaders and current-pose-only
-animations. These qualified limitations are part of the 1.0.0 contract.
+animations. These qualified limitations remain part of the 1.1.0 contract.
+
+Streaming APIs retain canonical block state and reject incomplete streams; hosts
+own Decoder installation, input cancellation and retained scene memory. Blueprint
+LOD APIs are approximate visual previews, not authoritative collision or editing
+data. Hosts own their palette, cache dependency keys and regeneration policy.
+See [streaming](streaming.md) and [blueprint LOD](blueprint-lod.md) for these contracts.
 
 Ogre/Material loader progress callbacks receive an Event carrying `loaded`, `total` and `lengthComputable`. Pre-v1 numeric callback pairs are replaced by the Three.js-compatible event contract.

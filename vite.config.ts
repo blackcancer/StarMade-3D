@@ -1,3 +1,7 @@
+import { readBlueprintLod } from './scripts/lod/prepare.mjs';
+import { gzipSync } from 'node:zlib';
+import { streamStarMadeInspection, encodeStarMadeInspectionFrame } from './src/index.js';
+import { sendBlueprintStream } from './scripts/blueprint-stream.mjs';
 import { readShaderCorpus } from './scripts/shader-corpus.mjs';
 import { functionalBlockFromElementInfo, STARMADE_FUNCTIONAL_SOURCE } from "./src/inspection/functional.js";
 import { inspectionBlueprintEntities } from "./src/inspection/blueprint.js";
@@ -131,6 +135,27 @@ export default defineConfig({
 
           const requestPath = decodeURIComponent(req.url.split("?")[0] ?? "");
 
+          if (requestPath === "/isanth.lod.json") {
+            const level = Number(new URL(req.url, 'http://localhost').searchParams.get('level') ?? 2);
+            if (![1,2,4].includes(level)) { res.statusCode=400;res.end('Invalid LOD level');return; }
+            void readBlueprintLod(isanthBlueprintRoot,{starmadeRoot}).then(data=>{
+              if(!data){res.statusCode=404;res.end('LOD cache missing or stale');return;}
+              const payload=JSON.stringify({...data,regions:data.regions.filter(region=>region.cellSize===level)});
+              const bytes=gzipSync(payload);
+              res.setHeader('Content-Type','application/json');res.setHeader('Content-Encoding','gzip');res.setHeader('Content-Length',bytes.length);
+              res.setHeader('Cache-Control','no-cache');res.end(bytes);
+            }).catch(next);
+            return;
+          }
+          if (requestPath === "/isanth.stream") {
+            const abort = new AbortController();
+            res.on("close", () => abort.abort());
+            void import("starmade-decoder").then(async ({ registerAllFactories, streamBlueprintFolder }) => {
+              registerAllFactories();
+              await sendBlueprintStream(res, streamStarMadeInspection(streamBlueprintFolder(isanthBlueprintRoot, { signal: abort.signal }), abort.signal), encodeStarMadeInspectionFrame, abort.signal);
+            }).catch(error => { if (res.headersSent) res.destroy(error); else next(error); });
+            return;
+          }
           if (requestPath !== "/isanth-smd3.json") {
             next();
             return;

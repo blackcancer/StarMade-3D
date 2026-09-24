@@ -1,7 +1,8 @@
+import { loadBlueprintLodPreview } from './blueprintLodPreview.js';
+import { loadStreamingBlueprint } from './streamingBlueprint.js';
 import { attachDisplays, loadDisplayAssets } from './displayAssets.js';
 import { blocksFromSegments, type StarMadeDisplayText } from '../../src/index.js';
 import { loadStarMadeShaderSources } from '../../src/shaders/sources.js';
-await loadStarMadeShaderSources('/starmade-assets/shaders.json');
 import {
   Box3,
   Color,
@@ -303,9 +304,11 @@ controls.dampingFactor = 0.08;
 controls.minDistance = 4;
 controls.maxDistance = 260;
 
+const fastPreview = await loadBlueprintLodPreview(renderer,scene,camera,controls).catch(error=>{console.warn('LOD preview unavailable',error);return undefined;});
+await loadStarMadeShaderSources('/starmade-assets/shaders.json');
 const sceneSun = createIsanthSceneSun();
 
-const [texturePack, smd3, decoderBlocks, mainConfigXml] = await Promise.all([
+const [texturePack, decoderBlocks, mainConfigXml] = await Promise.all([
   loadStarMadeCubeTexturePack({
     baseUrl: "/starmade-assets/textures/block",
     customBaseUrl: "/starmade-assets/custom-block-textures",
@@ -314,7 +317,6 @@ const [texturePack, smd3, decoderBlocks, mainConfigXml] = await Promise.all([
     includeCustom: true,
     includeNormals: true
   }),
-  fetchJson<Smd3ScenePayload>("/starmade-assets/blueprints/isanth-smd3.json"),
   fetchJson<BlockConfigPayload>("/starmade-assets/config/block-config.json"),
   fetchText(STARMADE_MAIN_CONFIG_URL)
 ]);
@@ -339,6 +341,99 @@ for (const cubeMaterial of cubeMaterials) {
 }
 const blockDefinitions = createBlockDefinitionMap(decoderBlocks);
 const lodModelRegistry = createStarMadeLodModelRegistry(parseStarMadeLodModelDefinitions(mainConfigXml));
+const loadingRoot = new Group();
+scene.add(loadingRoot);
+const loadingAbort = new AbortController();
+window.addEventListener('pagehide', () => loadingAbort.abort(), { once: true });
+const loadingStatus = document.createElement('div');
+loadingStatus.style.cssText = 'position:fixed;left:16px;top:16px;color:white;background:#111c;padding:8px;z-index:5';
+loadingStatus.textContent = 'Chargement du vaisseau…';
+document.body.append(loadingStatus);
+const loadingMeshes = new Map<string, Mesh[]>();
+const loadStart = performance.now();
+let firstVisibleMs: number | undefined;
+const shaderPreparation = {
+  enabled: new URLSearchParams(location.search).get('shaderWarmup') !== '0',
+  parallelCompilationSupported: renderer.extensions.has('KHR_parallel_shader_compile'),
+  phases: [] as { name: string; launchMs: number; waitMs: number; totalMs: number; programs: number }[],
+  textureWarmupEnabled: new URLSearchParams(location.search).get('textureWarmup') !== '0',
+  textureInitCallsMs: [] as number[],
+  textureSizes: [] as { width: number; height: number }[],
+  firstPreviewRenderCallMs: 0,
+  firstFinalShadowCallMs: 0,
+  firstFinalRenderCallMs: 0,
+  previewMainThreadMaxGapMs: 0
+};
+let lastHeartbeat = performance.now();
+const heartbeat = window.setInterval(() => {
+  const now = performance.now();
+  shaderPreparation.previewMainThreadMaxGapMs = Math.max(shaderPreparation.previewMainThreadMaxGapMs, now - lastHeartbeat);
+  lastHeartbeat = now;
+}, 16);
+async function prepareShaders(name: string): Promise<void> {
+  if (!shaderPreparation.enabled) return;
+  loadingStatus.textContent = 'Préparation du rendu…';
+  // Give the loading indicator a frame before starting driver work.
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  const start = performance.now();
+  const pending = renderer.compileAsync(scene, camera);
+  const launched = performance.now();
+  await pending;
+  const finished = performance.now();
+  shaderPreparation.phases.push({ name, launchMs: launched - start, waitMs: finished - launched, totalMs: finished - start, programs: renderer.info.programs?.length ?? 0 });
+}
+(window as unknown as { __STARMADE_SHADER_PREPARATION__: unknown }).__STARMADE_SHADER_PREPARATION__ = shaderPreparation;
+const smd3 = await loadStreamingBlueprint('/starmade-assets/blueprints/isanth.stream', loadingAbort.signal, async (node, incoming) => {
+  // Rebuild only the new segment and touching neighbours: remove temporary boundary faces.
+  for (const segment of node.segments.filter(s => Math.abs(s.x - incoming.x) + Math.abs(s.y - incoming.y) + Math.abs(s.z - incoming.z) <= 32)) {
+    const key = `${node.id}:${segment.x},${segment.y},${segment.z}`;
+    loadingMeshes.get(key)?.forEach(mesh => { loadingRoot.remove(mesh); mesh.geometry.dispose(); });
+    const batches = createStarMadeEncodedSegmentGeometryBatches({ segment, neighborSegments: node.segments, blockDefinitions, starMadeAtlasLayout: texturePack.layout });
+    const meshes = [new Mesh(batches.opaque, material), new Mesh(batches.blended, transparentMaterial)];
+    meshes.forEach(mesh => { mesh.position.set(...node.offset); loadingRoot.add(mesh); });
+    loadingMeshes.set(key, meshes);
+  }
+  loadingRoot.position.set(0, 0, 0);
+  const bounds = new Box3().setFromObject(loadingRoot), center = bounds.getCenter(new Vector3());
+  loadingRoot.position.sub(center);
+  camera.position.set(40, 20, 40); controls.target.set(0, 0, 0); controls.update();
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+  for (const m of cubeMaterials) {
+    updateStarMadeCubeShaderClipPlanes(m, camera.near, camera.far);
+    updateStarMadeCubeShaderMVP(m, camera.matrixWorldInverse, camera.projectionMatrix);
+    m.uniforms.viewPos.value.copy(camera.position);
+  }
+  if (firstVisibleMs === undefined) {
+    await prepareShaders('preview');
+    if (shaderPreparation.textureWarmupEnabled) {
+      const textures = new Set([...texturePack.layers.values(), ...(texturePack.normalLayers?.values() ?? []), ...(texturePack.overlay ? [texturePack.overlay] : [])]);
+      for (const texture of textures) {
+        shaderPreparation.textureSizes.push({ width: texture.image.width, height: texture.image.height });
+        loadingStatus.textContent = `Préparation du rendu : ${Math.round(shaderPreparation.textureInitCallsMs.length / textures.size * 100)} %`;
+        const start = performance.now();
+        renderer.initTexture(texture);
+        shaderPreparation.textureInitCallsMs.push(performance.now() - start);
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      }
+    }
+  }
+  const renderStart = performance.now();
+  fastPreview?.dispose();
+  renderer.render(scene, camera);
+  if (firstVisibleMs === undefined) shaderPreparation.firstPreviewRenderCallMs = performance.now() - renderStart;
+  firstVisibleMs ??= performance.now() - loadStart;
+  loadingStatus.textContent = `Chargement progressif : ${loadingMeshes.size} segments — éclairage final en préparation`;
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+}).catch(error => {
+  loadingStatus.textContent = 'Chargement interrompu ou incomplet';
+  throw error;
+}).finally(() => {
+  window.clearInterval(heartbeat);
+  loadingMeshes.forEach(meshes => meshes.forEach(mesh => mesh.geometry.dispose()));
+  scene.remove(loadingRoot);
+});
+(window as unknown as { __STARMADE_STREAMING__: unknown }).__STARMADE_STREAMING__ = { ...smd3.streaming, firstVisibleMs };
 const sceneEntities = createSceneEntities(smd3);
 const isanthBlockLight = createStarMadeSegmentBlockLightScene({
   entities: sceneEntities,
@@ -491,6 +586,8 @@ window.addEventListener("pagehide",()=>{displayPanels.forEach(panel=>panel.dispo
 
 window.addEventListener("resize", resize);
 resize();
+await prepareShaders('final');
+loadingStatus.remove();
 renderer.setAnimationLoop(frame);
 
 let didPublishReadyState = false;
@@ -603,9 +700,13 @@ function frame(): void {
   }
 
   // All passes must observe the same animation frame.
+  const shadowStart = performance.now();
   shadowPipeline.render(renderer);
+  if (!didPublishReadyState) shaderPreparation.firstFinalShadowCallMs = performance.now() - shadowStart;
   displayPanels.forEach(panel => {panel.updateTime(deltaS);panel.updateVisibility(camera);});
+  const mainStart = performance.now();
   renderer.render(scene, camera);
+  if (!didPublishReadyState) shaderPreparation.firstFinalRenderCallMs = performance.now() - mainStart;
 
   if (!didPublishReadyState) {
     didPublishReadyState = true;

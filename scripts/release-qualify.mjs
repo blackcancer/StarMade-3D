@@ -8,14 +8,14 @@ const output=process.env.STARMADE_QUALIFICATION_OUTPUT ?? `validation/v${version
 const inputs=releaseInputs();const startedAt=new Date().toISOString();
 mkdirSync(`${output}/logs`,{recursive:true});
 const recipes=[
- ['code',['run','validate:code']], ['game',['run','test:game']], ['gpu',['run','test:render']],
+ ['code',['run','validate:code']], ['game',['run','test:game']], ['lod-host',['run','test:lod:host']], ['gpu',['run','test:render']],
  ['index',['run','test:visual:index']], ['inspection',['run','test:inspection']],
- ['isanth',['run','test:isanth:views']], ['display',['run','test:display']], ['package',['run','test:package']], ['performance',['run','test:performance']], ['runtime-audit',['audit','--omit=dev','--json']]
+ ['isanth',['run','test:isanth:views']], ['lod',['run','test:lod']], ['display',['run','test:display']], ['package',['run','test:package']], ['performance',['run','test:performance']], ['runtime-audit',['audit','--omit=dev','--json']]
 ];
 const commands=[];
 for(const [name,args] of recipes){
  console.log(`Qualifying ${name}…`);const fd=openSync(`${output}/logs/release-${name}.log`,'w');
- const result=spawnSync(process.platform==='win32'?'npm.cmd':'npm',args,{stdio:['ignore',fd,fd],env:{...process.env,STARMADE_RENDER_OUTPUT:output+'/gpu',STARMADE_INDEX_OUTPUT:output+'/index',STARMADE_INSPECTION_OUTPUT:output+'/inspection',STARMADE_ISANTH_OUTPUT:output+'/isanth',STARMADE_DISPLAY_OUTPUT:output+'/display',STARMADE_PACKAGE_OUTPUT:output,STARMADE_PERFORMANCE_OUTPUT:output}});closeSync(fd);
+ const result=spawnSync(process.platform==='win32'?'npm.cmd':'npm',args,{stdio:['ignore',fd,fd],env:{...process.env,STARMADE_RENDER_OUTPUT:output+'/gpu',STARMADE_INDEX_OUTPUT:output+'/index',STARMADE_INSPECTION_OUTPUT:output+'/inspection',STARMADE_ISANTH_OUTPUT:output+'/isanth',STARMADE_LOD_OUTPUT:output+'/lod',STARMADE_DISPLAY_OUTPUT:output+'/display',STARMADE_PACKAGE_OUTPUT:output,STARMADE_PERFORMANCE_OUTPUT:output}});closeSync(fd);
  commands.push({name,exitCode:result.status,error:result.error?.message});
  if(result.status!==0){writeFileSync(output+'/qualification.json',JSON.stringify({ok:false,startedAt,commands,inputs},null,2));throw Error(`${name} failed; see release-${name}.log`);}
  console.log(`${name}: PASS`);

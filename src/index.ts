@@ -33,3 +33,7 @@ export * from './starmade/displayText.js';
 export * from './viewer/createStarMadeDisplayPanel.js';
 
 export * from './starmade/displayValues.js';
+export * from './inspection/streaming.js';
+export * from './inspection/streamTransport.js';
+export * from './geometry/blueprintLod.js';
+export * from './viewer/createBlueprintLodScene.js';
